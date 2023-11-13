@@ -8,7 +8,7 @@ use log::{debug, error, info, warn};
 use scraper::{Html, Selector};
 use serde::Serialize;
 use tokio::sync::{mpsc, oneshot, RwLock};
-use url::Url;
+use url::{ParseError, Url};
 
 static MAX_RETRIES: u8 = 5;
 static FAIL_SLEEP_MSECS: u64 = 100;
@@ -187,7 +187,7 @@ pub async fn page_storer(mut rx: mpsc::Receiver<StoreRequest>) -> (usize, Vec<(L
                 let mut writer = pages.write().await;
                 if !writer.contains_key(&url) {
                     writer.insert(url.clone(), PageStatus::Pending);
-                    info!("New URL: {}", url);
+                    debug!("page_storer - storing new URL: {}", url);
                 }
             }
             StoreRequest::ShutDown => {
@@ -199,6 +199,27 @@ pub async fn page_storer(mut rx: mpsc::Receiver<StoreRequest>) -> (usize, Vec<(L
     let processed_pages = pages.read().await.len();
     let failed_urls = get_failed_urls(&mut pages).await;
     (processed_pages, failed_urls)
+}
+
+fn handle_parseerror(href: &str, base_url: &Url, err: ParseError) -> Option<Url> {
+    // it's a relative URL, so let's try to smush it on top of the base URL.
+    if let url::ParseError::RelativeUrlWithoutBase = err {
+        match base_url.join(href) {
+            Ok(url) => Some(url),
+            Err(err) => {
+                warn!(
+                    "Failed to rebase link url ({}) on {}, can't handle it: {:?}",
+                    href,
+                    base_url.as_str(),
+                    err
+                );
+                None
+            }
+        }
+    } else {
+        warn!("Failed to parse link URL, can't handle it: {:?}", err);
+        return None;
+    }
 }
 
 /// parse a page looking for URLs
@@ -214,26 +235,10 @@ fn get_links(base_url: Url, html: &str, hosts: &[String], check_images: bool) ->
             let href = link.value().attr("href")?;
             let url = match Url::parse(href) {
                 Ok(url) => url,
-                Err(err) => {
-                    // it's a relative URL, so let's try to smush it on top of the base URL.
-                    if let url::ParseError::RelativeUrlWithoutBase = err {
-                        match base_url.join(href) {
-                            Ok(url) => url,
-                            Err(err) => {
-                                warn!(
-                                    "Failed to rebase link url ({}) on {}, can't handle it: {:?}",
-                                    href,
-                                    base_url.as_str(),
-                                    err
-                                );
-                                return None;
-                            }
-                        }
-                    } else {
-                        warn!("Failed to parse link URL, can't handle it: {:?}", err);
-                        return None;
-                    }
-                }
+                Err(err) => match handle_parseerror(href, &base_url, err) {
+                    Some(url) => url,
+                    None => return None,
+                },
             };
             info!("Found link: {}", url.as_ref());
 
@@ -251,26 +256,10 @@ fn get_links(base_url: Url, html: &str, hosts: &[String], check_images: bool) ->
             debug!("Found image SRC: {}", src);
             let url = match Url::parse(src) {
                 Ok(url) => url,
-                Err(err) => {
-                    // it's a relative URL, so let's try to smush it on top of the base URL.
-                    if let url::ParseError::RelativeUrlWithoutBase = err {
-                        match base_url.join(src) {
-                            Ok(url) => url,
-                            Err(err) => {
-                                warn!(
-                                    "Failed to rebase img url ({}) on {}, can't handle it: {:?}",
-                                    src,
-                                    base_url.as_str(),
-                                    err
-                                );
-                                return None;
-                            }
-                        }
-                    } else {
-                        warn!("Failed to parse IMG URL, can't handle it: {:?}", err);
-                        return None;
-                    }
-                }
+                Err(err) => match handle_parseerror(src, &base_url, err) {
+                    Some(url) => url,
+                    None => return None,
+                },
             };
 
             let url = match url.host() {
