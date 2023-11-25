@@ -36,6 +36,8 @@ Options:
 ## Process flow
 
 ```mermaid
+
+
 sequenceDiagram
 
 participant Main
@@ -56,7 +58,7 @@ loop
     PageWorker->>Websites: Enscrapen
     Websites->>PageWorker: Page Response
     loop 
-        PageWorker->>PageWorker: Parses the pages<br/>making a list of links
+        PageWorker->>PageWorker: Parses the page<br/>making a list of links
     end
     PageWorker->>PageStorer: Got a page, and a bunch of inks!
     Note left of PageStorer: Store the page and check it back in.
