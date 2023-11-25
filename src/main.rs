@@ -1,11 +1,11 @@
 use clap::Parser;
+use link_finder::page_storer::page_storer;
+use link_finder::page_worker::{page_worker, pull_and_parse_page};
+use link_finder::{CliOptions, StoreRequest};
 use log::{error, info};
 use serde_json::json;
 use structured_logger::{async_json::new_writer, Builder};
-
 use tokio::sync::mpsc;
-
-use link_finder::*;
 
 fn setup_logging(level: &str) {
     Builder::with_level(level)
@@ -40,8 +40,9 @@ async fn main() {
 
     let (tx, rx) = mpsc::channel(100);
 
-    // do the first URL, for good justice.
-    let res = pull_and_parse_page(options.url.clone(), &options.host, options.images).await;
+    // do the first URL, to start the process off.
+    let res =
+        pull_and_parse_page(options.url.clone(), &options.host, options.include_generic).await;
     let mut bail = false;
     for req in res {
         if let Err(err) = tx.send(req).await {
@@ -56,16 +57,14 @@ async fn main() {
         info!("Pulled first URL, starting workers")
     }
 
-    let store_process = tokio::spawn(page_storer(rx));
+    let store_process = tokio::spawn(page_storer(options.clone(), rx));
 
     // spawn cpus-2 workers
     // get the number of CPUs we have
     let cpus = num_cpus::get();
 
-    // let worker = page_worker(tx.clone());
     let mut workers = Vec::new();
-
-    (0..cpus - 2).for_each(|_| {
+    (0..cpus - 1).for_each(|_| {
         let my_tx = tx.clone();
         workers.push(page_worker(options.clone(), my_tx));
     });
@@ -73,18 +72,38 @@ async fn main() {
     for worker in workers {
         worker.await;
     }
+
     if let Err(err) = tx.send(StoreRequest::ShutDown).await {
         error!("Well, we failed to send the SHUTDOWN message. {:?}", err);
         return;
     }
 
     match store_process.await {
-        Ok((num_urls, errors)) => {
-            info!("Store process finished: processed {:?} urls", num_urls);
+        Ok(results) => {
+            info!(
+                "Store process finished: processed {:?} urls",
+                &results.processed_pages
+            );
 
-            if !errors.is_empty() {
+            if !options.only_show_errors {
+                results.ok_urls.iter().for_each(|url| {
+                    let logline = json!({
+                        "status" : "ok",
+                        "url": &url
+                    });
+                    println!(
+                        "{}",
+                        serde_json::to_string(&logline).unwrap_or_else(|err| format!(
+                            "Failed to serialize {:?}: {:?}",
+                            url, err
+                        ))
+                    );
+                })
+            }
+
+            if !results.failed_urls.is_empty() {
                 // error!("Failed URLs!");
-                errors.iter().for_each(|(url, err)| {
+                results.failed_urls.iter().for_each(|(url, err)| {
                     let logline = json!({
                         "status" : "failed",
                         "url": url,
@@ -103,7 +122,6 @@ async fn main() {
         }
         Err(err) => {
             error!("Failed to finish store process: {:?}", err);
-
             std::process::exit(1);
         }
     };
