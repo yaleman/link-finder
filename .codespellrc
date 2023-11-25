@@ -1,0 +1,5 @@
+[codespell]
+skip = ./target/*
+ignore-words-list = crate
+interactive = 3
+write-changes = true
