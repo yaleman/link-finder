@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 lazy_static = "1.4.0"
-log = "0.4.20"
+log = "0.4.21"
 num_cpus = "1.16.0"
 reqwest = "0.11.24"
 scraper = "0.18.1"
