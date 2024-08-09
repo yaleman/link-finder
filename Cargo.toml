@@ -11,7 +11,7 @@ lazy_static = "1.5.0"
 log = "0.4.22"
 num_cpus = "1.16.0"
 reqwest = "0.12.5"
-scraper = "0.19.1"
+scraper = "0.20.0"
 serde = { version = "1.0.205", features = ["derive"] }
 serde_json = "1.0.122"
 simple_logger = "5.0.0"
