@@ -795,7 +795,6 @@ dependencies = [
  "clap",
  "log",
  "num_cpus",
- "once_cell",
  "reqwest",
  "scraper",
  "serde",

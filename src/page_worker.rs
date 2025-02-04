@@ -1,6 +1,5 @@
 use crate::{CliOptions, LinkType, PageStatus, StoreRequest};
 use log::*;
-use once_cell::sync::Lazy;
 use scraper::{Html, Selector};
 use std::string::FromUtf8Error;
 use tokio::sync::{mpsc, oneshot};
@@ -114,9 +113,6 @@ pub async fn page_worker(config: CliOptions, tx: mpsc::Sender<StoreRequest>) {
     }
 }
 
-static A_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("a").unwrap());
-static IMG_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("img").unwrap());
-
 const GENERIC_EXTENSIONS: [&str; 13] = [
     "pdf", "txt", "tif", "xml", "jpg", "jpeg", "png", "gif", "webp", "xml", "zip", "7z", "rar",
 ];
@@ -126,7 +122,7 @@ fn get_links(base_url: Url, html: &str, hosts: &[String], check_generic: bool) -
     let html = Html::parse_document(html);
 
     let mut res: Vec<LinkType> = html
-        .select(&A_SELECTOR)
+        .select(&Selector::parse("a").expect("Failed to get selector"))
         .filter_map(|link| {
             let href = link.value().attr("href")?;
             let url = match Url::parse(href) {
@@ -236,7 +232,13 @@ fn check_for_linkrel(html: &Html, base_url: &Url, hosts: &[String]) -> Vec<LinkT
 }
 
 fn check_for_images(html: &Html, base_url: &Url, hosts: &[String]) -> Vec<LinkType> {
-    check_for_generic(html, base_url, hosts, &IMG_SELECTOR, "src")
+    check_for_generic(
+        html,
+        base_url,
+        hosts,
+        &Selector::parse("img").expect("Failed to get selector"),
+        "src",
+    )
 }
 
 pub async fn pull_and_parse_page(
@@ -321,4 +323,14 @@ async fn pull_page(url: Url) -> Result<String, LinkFinderError> {
         }
     };
     Ok(body)
+}
+
+#[test]
+fn test_get_links() {
+    let base_url = Url::parse("http://example.com").unwrap();
+    let hosts = vec!["example.com".to_string(), "www.iana.org".to_string()];
+    let html = include_str!("../tests/example.com.html");
+    let links = get_links(base_url, html, &hosts, true);
+    println!("{:?}", links);
+    assert_eq!(links.len(), 1);
 }
