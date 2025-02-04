@@ -327,10 +327,26 @@ async fn pull_page(url: Url) -> Result<String, LinkFinderError> {
 
 #[test]
 fn test_get_links() {
-    let base_url = Url::parse("http://example.com").unwrap();
+    let base_url = Url::parse("http://example.com").expect("Failed to generate URL");
     let hosts = vec!["example.com".to_string(), "www.iana.org".to_string()];
     let html = include_str!("../tests/example.com.html");
     let links = get_links(base_url, html, &hosts, true);
     println!("{:?}", links);
     assert_eq!(links.len(), 1);
+}
+
+#[tokio::test]
+async fn test_pull_page() {
+    let url = Url::parse("http://example.com").expect("Failed to generate URL");
+    let _ = pull_page(url.clone()).await.expect("Failed to pull page");
+
+    let okgood = pull_and_parse_page(url, &["example.com".to_string()], true).await;
+    assert_eq!(okgood.len(), 1);
+    let failed = pull_and_parse_page(
+        Url::parse("http://thiscannotpossiblyexists.example.com").expect("Failed to generate URL"),
+        &["thiscannotpossiblyexists.example.com".to_string()],
+        true,
+    )
+    .await;
+    assert_eq!(failed.len(), 1);
 }
