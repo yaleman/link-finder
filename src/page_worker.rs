@@ -1,5 +1,6 @@
 use crate::{CliOptions, LinkType, PageStatus, StoreRequest};
 use log::*;
+use once_cell::sync::Lazy;
 use scraper::{Html, Selector};
 use std::string::FromUtf8Error;
 use tokio::sync::{mpsc, oneshot};
@@ -112,8 +113,6 @@ pub async fn page_worker(config: CliOptions, tx: mpsc::Sender<StoreRequest>) {
         tokio::time::sleep(std::time::Duration::from_micros(config.fail_sleep_msecs)).await;
     }
 }
-
-use once_cell::sync::Lazy;
 
 static A_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("a").unwrap());
 static IMG_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("img").unwrap());
