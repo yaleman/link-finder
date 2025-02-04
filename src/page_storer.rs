@@ -21,8 +21,8 @@ fn get_storable_link(url: &LinkType) -> LinkType {
 }
 
 /// This adds it to the internal data store, but strips fragments to reduce re-scraping (`#fragment`)
-async fn add_link<'a>(
-    store: &mut RwLockWriteGuard<'a, HashMap<LinkType, PageStatus>>,
+async fn add_link(
+    store: &mut RwLockWriteGuard<'_, HashMap<LinkType, PageStatus>>,
     url: LinkType,
     status: PageStatus,
 ) {
@@ -31,7 +31,7 @@ async fn add_link<'a>(
     store.insert(url, status);
 }
 
-async fn has_checkouts<'a>(input: &RwLockReadGuard<'a, HashMap<LinkType, PageStatus>>) -> usize {
+async fn has_checkouts(input: &RwLockReadGuard<'_, HashMap<LinkType, PageStatus>>) -> usize {
     input
         .iter()
         .filter_map(|(_, status)| {

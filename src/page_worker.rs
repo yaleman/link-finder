@@ -1,5 +1,4 @@
 use crate::{CliOptions, LinkType, PageStatus, StoreRequest};
-use lazy_static::lazy_static;
 use log::*;
 use scraper::{Html, Selector};
 use std::string::FromUtf8Error;
@@ -114,10 +113,10 @@ pub async fn page_worker(config: CliOptions, tx: mpsc::Sender<StoreRequest>) {
     }
 }
 
-lazy_static! {
-    static ref A_SELECTOR: Selector = Selector::parse("a").unwrap();
-    static ref IMG_SELECTOR: Selector = Selector::parse("img").unwrap();
-}
+use once_cell::sync::Lazy;
+
+static A_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("a").unwrap());
+static IMG_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("img").unwrap());
 
 const GENERIC_EXTENSIONS: [&str; 13] = [
     "pdf", "txt", "tif", "xml", "jpg", "jpeg", "png", "gif", "webp", "xml", "zip", "7z", "rar",
