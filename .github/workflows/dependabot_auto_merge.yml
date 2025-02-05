@@ -1,5 +1,4 @@
 ---
-# yamllint disable rule:line-length
 name: Dependabot auto-approval and auto-merge
 "on": pull_request
 
@@ -10,7 +9,7 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    # limit this to PRs opened by dependabot
+    #  limit this to PRs opened by dependabot
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
       - name: Dependabot metadata
