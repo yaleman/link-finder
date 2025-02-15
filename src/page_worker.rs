@@ -337,14 +337,15 @@ fn test_get_links() {
 
 #[tokio::test]
 async fn test_pull_page() {
-    let url = Url::parse("http://example.com").expect("Failed to generate URL");
+    let url = Url::parse("http://yaleman.org").expect("Failed to generate URL");
     let _ = pull_page(url.clone()).await.expect("Failed to pull page");
 
-    let okgood = pull_and_parse_page(url, &["example.com".to_string()], true).await;
+    let okgood = pull_and_parse_page(url, &["yaleman.or".to_string()], true).await;
     assert_eq!(okgood.len(), 1);
     let failed = pull_and_parse_page(
-        Url::parse("http://thiscannotpossiblyexists.example.com").expect("Failed to generate URL"),
-        &["thiscannotpossiblyexists.example.com".to_string()],
+        Url::parse("http://thiscannotpossiblyexistsasdfasdf12432.yaleman.org")
+            .expect("Failed to generate URL"),
+        &["thiscannotpossiblyexistsasdfasdf.yaleman.org".to_string()],
         true,
     )
     .await;
