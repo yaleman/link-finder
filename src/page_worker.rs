@@ -136,7 +136,7 @@ fn get_links(base_url: Url, html: &str, hosts: &[String], check_generic: bool) -
             if hosts.contains(&url.host_str().unwrap_or("").to_string()) {
                 // lazy check to see if we've found a link to an image etc
                 let path = url.path().to_lowercase();
-                let ext = path.split('.').last().unwrap_or("");
+                let ext = path.split('.').next_back().unwrap_or("");
                 if GENERIC_EXTENSIONS.contains(&ext) {
                     debug!("Found generic link: {}", url.as_str());
                     if check_generic {
