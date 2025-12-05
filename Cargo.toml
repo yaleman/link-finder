@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.53", features = ["derive"] }
-log = "0.4.28"
+log = "0.4.29"
 num_cpus = "1.17.0"
 reqwest = "0.12.24"
 scraper = "0.24.0"
