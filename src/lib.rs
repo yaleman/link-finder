@@ -1,7 +1,7 @@
 pub mod page_storer;
 pub mod page_worker;
 
-use clap::{command, Parser};
+use clap::Parser;
 
 use std::fmt::Display;
 
