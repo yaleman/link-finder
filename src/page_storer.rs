@@ -33,8 +33,8 @@ async fn add_link(
 
 async fn has_checkouts(input: &RwLockReadGuard<'_, HashMap<LinkType, PageStatus>>) -> usize {
     input
-        .iter()
-        .filter_map(|(_, status)| {
+        .values()
+        .filter_map(|status| {
             if let PageStatus::CheckedOut(_) = status {
                 Some(1)
             } else {
