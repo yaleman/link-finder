@@ -94,7 +94,7 @@ pub async fn page_worker(config: CliOptions, tx: mpsc::Sender<StoreRequest>) {
                 PageStatus::HasCheckouts(count) => {
                     debug!(
                         "{} waiting on URL: no URLs, but {} checked out. Sleeping for {}ms",
-                        my_id, count, &config.fail_sleep_msecs
+                        my_id, count, config.fail_sleep_msecs
                     );
                     tokio::time::sleep(std::time::Duration::from_micros(config.fail_sleep_msecs))
                         .await;
@@ -141,7 +141,7 @@ fn get_links(base_url: Url, html: &str, hosts: &[String], check_generic: bool) -
                     debug!("Found generic link: {}", url.as_str());
                     if check_generic {
                         let link = LinkType::Generic(url);
-                        debug!("Found {}", &link);
+                        debug!("Found {}", link);
                         Some(link)
                     } else {
                         debug!("Dropping {} as not including generics", url.as_str());
@@ -149,7 +149,7 @@ fn get_links(base_url: Url, html: &str, hosts: &[String], check_generic: bool) -
                     }
                 } else {
                     let link = LinkType::Page(url);
-                    debug!("Found {}", &link);
+                    debug!("Found {}", link);
                     Some(link)
                 }
             } else {

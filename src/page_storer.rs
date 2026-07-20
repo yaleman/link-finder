@@ -27,7 +27,7 @@ async fn add_link(
     status: PageStatus,
 ) {
     let url: LinkType = get_storable_link(&url);
-    debug!("Storing {} -> {}", &url, status.as_name());
+    debug!("Storing {} -> {}", url, status.as_name());
     store.insert(url, status);
 }
 
@@ -113,7 +113,7 @@ pub async fn page_storer(
                 match tx.send(next_url) {
                     Ok(_) => {
                         if let Some(url) = url {
-                            debug!("Checking out {}", &url);
+                            debug!("Checking out {}", url);
                             let mut writer = pages.write().await;
                             add_link(
                                 &mut writer,
