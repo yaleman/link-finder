@@ -82,7 +82,7 @@ async fn main() {
         Ok(results) => {
             info!(
                 "Store process finished: processed {:?} urls",
-                &results.processed_pages
+                results.processed_pages
             );
 
             if !options.only_show_errors {
